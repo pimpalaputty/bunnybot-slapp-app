@@ -40,15 +40,15 @@ var slapp = Slapp({
 })
 
 function isDefined(obj) {
-    if (typeof obj == 'undefined') {
-        return false
-    }
+  if (typeof obj == 'undefined') {
+    return false
+  }
 
-    if (!obj) {
-        return false
-    }
+  if (!obj) {
+    return false
+  }
 
-    return obj != null
+  return obj != null
 }
 
 // var HELP_TEXT = `
@@ -118,17 +118,23 @@ slapp.message('.*', ['direct_message', 'direct_mention', 'mention', 'ambient'], 
         } else if (isDefined(action) && isDefined(response.result.parameters.project_name)) {
           msg.say({
             text: 'Do you want to create a bug for ' + response.result.parameters.project_name + '?',
-            attachments: [
-              {
-                text: '',
-                fallback: 'Yes or No?',
-                callback_id: 'yesno_callback',
-                actions: [
-                  { name: 'answer', text: 'Yes', type: 'button', value: 'yes' },
-                  { name: 'answer', text: 'No',  type: 'button',  value: 'no' }
-                ]
+            attachments: [{
+              text: '',
+              fallback: 'Yes or No?',
+              callback_id: 'yesno_callback',
+              actions: [{
+                name: 'answer',
+                text: 'Yes',
+                type: 'button',
+                value: 'yes'
+              }, {
+                name: 'answer',
+                text: 'No',
+                type: 'button',
+                value: 'no'
               }]
-            })
+            }]
+          })
         }
 
       }
@@ -145,13 +151,19 @@ slapp.message('.*', ['direct_message', 'direct_mention', 'mention', 'ambient'], 
 slapp.action('yesno_callback', 'answer', (msg, value) => {
   if (value === 'yes') {
     msg.respond(msg.body.response_url, 'Done!')
-    channelsRef.child("alanisawesome").set({
+    channelsRef.child(msg.body.event.channel).set({
       project_name: "test"
+    }, function (error) {
+      if (error) {
+        alert("Data could not be saved." + error)
+      } else {
+        alert("Data saved successfully.")
+      }
     });
   }
   if (value === 'no') {
     msg.respond(msg.body.response_url, 'No problem! Maybe later.')
-  } 
+  }
 })
 
 // // response to the user typing "help"
