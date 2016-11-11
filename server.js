@@ -26,11 +26,8 @@ admin.initializeApp({
   }),
   databaseURL: "https://bunnybot-aec3c.firebaseio.com"
 });
-var db = admin.database();
-var ref = db.ref("channels/C123123/project_name");
-ref.once("value", function(snapshot) {
-  console.log(snapshot.val());
-});
+var db = admin.database()
+var channelsRef = db.ref("channels")
 
 // use `PORT` env var on Beep Boop - default to 3000 locally
 var port = process.env.PORT || 3000
@@ -54,14 +51,14 @@ function isDefined(obj) {
     return obj != null
 }
 
-var HELP_TEXT = `
-I will respond to the following messages:
-\`help\` - to see this message.
-\`hi\` - to demonstrate a conversation that tracks state.
-\`thanks\` - to demonstrate a simple response.
-\`<type-any-other-text>\` - to demonstrate a random emoticon response, some of the time :wink:.
-\`attachment\` - to see a Slack attachment message.
-`
+// var HELP_TEXT = `
+// I will respond to the following messages:
+// \`help\` - to see this message.
+// \`hi\` - to demonstrate a conversation that tracks state.
+// \`thanks\` - to demonstrate a simple response.
+// \`<type-any-other-text>\` - to demonstrate a random emoticon response, some of the time :wink:.
+// \`attachment\` - to see a Slack attachment message.
+// `
 
 //*********************************************
 // Setup different handlers for messages
@@ -148,6 +145,9 @@ slapp.message('.*', ['direct_message', 'direct_mention', 'mention', 'ambient'], 
 slapp.action('yesno_callback', 'answer', (msg, value) => {
   if (value === 'yes') {
     msg.respond(msg.body.response_url, 'Done!')
+    channelsRef.child("alanisawesome").set({
+      project_name: "test"
+    });
   }
   if (value === 'no') {
     msg.respond(msg.body.response_url, 'No problem! Maybe later.')
