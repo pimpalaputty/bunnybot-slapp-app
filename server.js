@@ -151,7 +151,7 @@ slapp.message('.*', ['direct_message', 'direct_mention', 'mention', 'ambient'], 
 slapp.action('yesno_callback', 'answer', (msg, value) => {
   if (value === 'yes') {
     msg.respond(msg.body.response_url, 'Done!')
-    channelsRef.child(msg.body.event.channel).set({
+    channelsRef.child(msg.body.channel.id).set({
       project_name: "test"
     }, function (error) {
       if (error) {
