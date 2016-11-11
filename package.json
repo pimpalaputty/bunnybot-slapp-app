@@ -22,6 +22,9 @@
     "slapp": "^1.2.0",
     "slapp-context-beepboop": "^1.1.0",
     "slapp-convo-beepboop": "^1.0.0",
-    "standard": "^8.4.0"
+    "standard": "^8.4.0",
+    "apiai": "^2.0.0",
+    "html-entities": "^1.2.0",
+    "node-uuid": "^1.4.7"
   }
 }
