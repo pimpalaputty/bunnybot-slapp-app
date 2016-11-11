@@ -5,17 +5,17 @@ const Slapp = require('slapp')
 const ConvoStore = require('slapp-convo-beepboop')
 const Context = require('slapp-context-beepboop')
 
-const apiai = require('apiai');
-const apiAiAccessToken = process.env.APIAI_ACCESS_TOKEN;
-const apiaiOptions = {};
-const apiAiService = apiai(apiAiAccessToken, apiaiOptions);
+const apiai = require('apiai')
+const apiAiAccessToken = process.env.APIAI_ACCESS_TOKEN
+const apiaiOptions = {}
+const apiAiService = apiai(apiAiAccessToken, apiaiOptions)
 
-const uuid = require('node-uuid');
+const uuid = require('node-uuid')
 
-const Entities = require('html-entities').XmlEntities;
-const decoder = new Entities();
+const Entities = require('html-entities').XmlEntities
+const decoder = new Entities()
 
-const sessionIds = new Map();
+const sessionIds = new Map()
 
 // use `PORT` env var on Beep Boop - default to 3000 locally
 var port = process.env.PORT || 3000
@@ -29,14 +29,14 @@ var slapp = Slapp({
 
 function isDefined(obj) {
     if (typeof obj == 'undefined') {
-        return false;
+        return false
     }
 
     if (!obj) {
-        return false;
+        return false
     }
 
-    return obj != null;
+    return obj != null
 }
 
 var HELP_TEXT = `
@@ -54,22 +54,22 @@ I will respond to the following messages:
 
 slapp.message('.*', ['direct_message', 'direct_mention', 'mention', 'ambient'], (msg, text) => {
   try {
-    let requestText = decoder.decode(text);
-    requestText = requestText.replace("’", "'");
+    let requestText = decoder.decode(text)
+    requestText = requestText.replace("’", "'")
 
-    let channel = msg.body.event.channel;
-    let botId = msg.meta.bot_user_id;
-    let userId = msg.body.event.user;
+    let channel = msg.body.event.channel
+    let botId = msg.meta.bot_user_id
+    let userId = msg.body.event.user
 
     if (requestText.indexOf(botId) > -1) {
-      requestText = requestText.replace(botId, '');
+      requestText = requestText.replace(botId, '')
     }
 
     if (!sessionIds.has(channel)) {
-      sessionIds.set(channel, uuid.v1());
+      sessionIds.set(channel, uuid.v1())
     }
 
-    console.log('Start request:', requestText);
+    console.log('Start request:', requestText)
     let request = apiAiService.textRequest(requestText, {
       sessionId: sessionIds.get(channel),
       contexts: [{
@@ -79,45 +79,64 @@ slapp.message('.*', ['direct_message', 'direct_mention', 'mention', 'ambient'], 
           slack_channel: channel
         }
       }]
-    });
+    })
     request.on('response', (response) => {
-      console.log(response);
+      console.log(response)
 
       if (isDefined(response.result)) {
-        let responseText = response.result.fulfillment.speech;
-        let responseData = response.result.fulfillment.data;
-        let action = response.result.action;
-        console.log(action);
+        let responseText = response.result.fulfillment.speech
+        let responseData = response.result.fulfillment.data
+        let action = response.result.action
 
         if (isDefined(responseData) && isDefined(responseData.slack)) {
           try {
-            // bot.reply(message, responseData.slack);
-            msg.say(responseData.slack);
+            msg.say(responseData.slack)
           } catch (err) {
-            // bot.reply(message, err.message);
-            msg.say(err.message);
+            msg.say(err.message)
           }
         } else if (isDefined(responseText)) {
-          // bot.reply(message, responseText, (err, resp) => {
-          msg.say(responseText, (err, data) => {;
+          msg.say(responseText, (err, data) => {
             if (data) {
-              console.log(data);
+              console.log(data)
             }
             if (err) {
-              console.error(err);
+              console.error(err)
             }
-          });
+          })
+        } else if (isDefined(action) && isDefined(response.result.parameters.project_name)) {
+          msg.say({
+            text: 'Do you want to create a bug for ' + response.result.parameters.project_name + '?',
+            attachments: [
+              {
+                text: '',
+                fallback: 'Yes or No?',
+                callback_id: 'yesno_callback',
+                actions: [
+                  { name: 'answer', text: 'Yes', type: 'button', value: 'yes' },
+                  { name: 'answer', text: 'No',  type: 'button',  value: 'no' }
+                ]
+              }]
+            })
         }
 
       }
-    });
+    })
 
-    request.on('error', (error) => console.error(error));
-    request.end();
+    request.on('error', (error) => console.error(error))
+    request.end()
 
   } catch (err) {
-    console.error(err);
+    console.error(err)
   }
+})
+
+slapp.action('yesno_callback', 'answer', (msg, value) => {
+  if (value === 'yes') {
+    msg.respond(msg.body.response_url, 'Done!')
+  }
+  if (value === 'no') {
+    msg.respond(msg.body.response_url, 'No problem! Maybe later.')
+  } 
 })
 
 // // response to the user typing "help"
