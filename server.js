@@ -39,8 +39,24 @@ I will respond to the following messages:
 // Setup different handlers for messages
 //*********************************************
 
-slapp.message('.*', ['direct_message', 'direct_mention', 'mention', 'ambient'], (msg) => {
-  msg.say(HELP_TEXT)
+slapp.message('.*', ['direct_message', 'direct_mention', 'mention', 'ambient'], (msg, text) => {
+  try {
+    console.log('msg:', msg);
+    console.log('text:', text);
+    // let requestText = decoder.decode(text);
+    // requestText = requestText.replace("’", "'");
+
+    // let channel = msg.event.channel;
+    // let messageType = msg.event.type;
+    // let userId = msg.event.user;
+
+    // console.log('requestText:', requestText);
+    // console.log('messageType:', messageType);
+    // console.log('channel:', channel);
+    // console.log('userId:', userId);
+  } catch (err) {
+    console.error(err);
+  }
 })
 
 // // response to the user typing "help"
