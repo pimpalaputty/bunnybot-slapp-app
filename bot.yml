@@ -5,4 +5,7 @@ config:
   - name: APIAI_ACCESS_TOKEN
     friendly_name: API.AI client access token
     type: secret
+  - name: FIB_PRIVATEKEY
+    friendly_name: Firebase Admin private key
+    type: secret
 # To learn everything supported in the bot.yml file, visit https://beepboophq.com/docs/article/bot-yml

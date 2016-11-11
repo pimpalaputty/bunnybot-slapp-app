@@ -17,6 +17,21 @@ const decoder = new Entities()
 
 const sessionIds = new Map()
 
+var admin = require("firebase-admin");
+admin.initializeApp({
+  credential: admin.credential.cert({
+    projectId: "bunnybot-aec3c",
+    clientEmail: "firebase-adminsdk-5ct8p@bunnybot-aec3c.iam.gserviceaccount.com",
+    privateKey: process.env.FIB_PRIVATEKEY
+  }),
+  databaseURL: "https://bunnybot-aec3c.firebaseio.com"
+});
+var db = admin.database();
+var ref = db.ref("channels/C123123/project_name");
+ref.once("value", function(snapshot) {
+  console.log(snapshot.val());
+});
+
 // use `PORT` env var on Beep Boop - default to 3000 locally
 var port = process.env.PORT || 3000
 
