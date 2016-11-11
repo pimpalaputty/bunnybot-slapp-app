@@ -27,7 +27,6 @@ admin.initializeApp({
   databaseURL: "https://bunnybot-aec3c.firebaseio.com"
 });
 var db = admin.database()
-var channelsRef = db.ref("channels")
 
 // use `PORT` env var on Beep Boop - default to 3000 locally
 var port = process.env.PORT || 3000
@@ -107,15 +106,16 @@ slapp.message('.*', ['direct_message', 'direct_mention', 'mention', 'ambient'], 
             msg.say(err.message)
           }
         } else if (isDefined(responseText)) {
-          msg.say(responseText, (err, data) => {
-            if (data) {
-              console.log(data)
-            }
-            if (err) {
-              console.error(err)
-            }
-          })
+          try {
+            msg.say(responseText)
+          } catch (err) {
+            msg.say(err.message)
+          }
         } else if (isDefined(action) && isDefined(response.result.parameters.project_name)) {
+          db
+            .ref(msg.meta.team_id)
+            .child(msg.meta.channel_id)
+            .set({project_name: response.result.parameters.project_name})
           msg.say({
             text: 'Do you want to create a bug for ' + response.result.parameters.project_name + '?',
             attachments: [{
@@ -150,26 +150,15 @@ slapp.message('.*', ['direct_message', 'direct_mention', 'mention', 'ambient'], 
 
 slapp.action('yesno_callback', 'answer', (msg, value) => {
   if (value === 'yes') {
-    console.log('FIREBASE WRITE ATTEMPT')
-    channelsRef.child(msg.body.channel.id).set({project_name: "test"},
-    function (error) {
-      if (error) {
-        console.log("Data could not be saved." + error)
-      } else {
-        console.log("Data saved successfully.")
-      }
-    })
-    msg.respond(msg.body.response_url, 'Done!')
-  }
-  if (value === 'no') {
-    msg.respond(msg.body.response_url, 'No problem! Maybe later.')
+    // TODO: call IFTTT trigger function
+    msg
+      .respond(msg.body.response_url, 'Done!')
+
+  } else if (value === 'no') {
+    msg
+      .respond(msg.body.response_url, 'No problem! Maybe later.')
   }
 })
-
-// // response to the user typing "help"
-// slapp.message('help', ['mention', 'direct_message'], (msg) => {
-//   msg.say(HELP_TEXT)
-// })
 
 // // "Conversation" flow that tracks state - kicks off when user says hi, hello or hey
 // slapp
