@@ -150,16 +150,16 @@ slapp.message('.*', ['direct_message', 'direct_mention', 'mention', 'ambient'], 
 
 slapp.action('yesno_callback', 'answer', (msg, value) => {
   if (value === 'yes') {
-    msg.respond(msg.body.response_url, 'Done!')
-    channelsRef.child(msg.body.channel.id).set({
-      project_name: "test"
-    }, function (error) {
+    console.log('FIREBASE WRITE ATTEMPT')
+    channelsRef.child(msg.body.channel.id).set({project_name: "test"},
+    function (error) {
       if (error) {
-        alert("Data could not be saved." + error)
+        console.log("Data could not be saved." + error)
       } else {
-        alert("Data saved successfully.")
+        console.log("Data saved successfully.")
       }
-    });
+    })
+    msg.respond(msg.body.response_url, 'Done!')
   }
   if (value === 'no') {
     msg.respond(msg.body.response_url, 'No problem! Maybe later.')
