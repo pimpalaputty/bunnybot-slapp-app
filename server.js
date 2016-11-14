@@ -68,10 +68,10 @@ The following projects are connected today:
 
 var isValidProjectId = function(pid) {
     console.log("pid", pid);
-    return ["maneko", "2020"].indexOf(pid) !== -1;
+    return ["maneko", "mobile2020", "online2020", "wallet", "micraft", "essencex"].indexOf(pid) !== -1;
 }
 
-slapp.command('/bunny', '(bug|feature)\\s?([\\w]+)(.*)', (msg, value, type, projectId, description) => {
+slapp.command('/bunny', '(\\w+)\\s?([\\w]+)(.*)', (msg, value, type, projectId, description) => {
 
     var help = function(text) {
         msg.say({
@@ -79,7 +79,7 @@ slapp.command('/bunny', '(bug|feature)\\s?([\\w]+)(.*)', (msg, value, type, proj
         })
     }
 
-    if (!isDefined(value) || !value) {
+    if (!isDefined(value) || !value || (type && ['bug', 'feature'].indexOf(type))) {
         help()
     } else if (!(type && projectId && description)) {
         help('Something is missing!')
@@ -201,7 +201,7 @@ slapp.route('handleDoitConfirmation', (msg, state) => {
         console.log(action ? 'true' : 'false');
         if (action) {
             IFTTT.request({
-                event: 'bug_maneko_trello', // TODO 
+                event: 'bug_maneko_trello', // TODO
                 method: 'POST',
                 params: {
                     'value1': 'card name', // title
