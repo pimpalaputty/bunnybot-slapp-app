@@ -151,6 +151,10 @@ slapp.message('.*', ['direct_message', 'direct_mention', 'mention', 'ambient'], 
 slapp.action('yesno_callback', 'answer', (msg, value) => {
   if (value === 'yes') {
     // TODO: call IFTTT trigger function
+      msg.respond('https://maker.ifttt.com/trigger/bug/with/key/12345') {
+          
+      }
+      
     msg.respond(msg.body.response_url, 'Done!')
 
   } else if (value === 'no') {
