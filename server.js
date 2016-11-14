@@ -54,12 +54,12 @@ function isDefined(obj) {
 }
 
 var HELP_TEXT_COMMAND = `
-I will respond to the following messages:
+I will respond to the following Slack commands:
 \`/bunny help\` - to see this message.
 \`/bunny bug [project] [short description]\` - to create a bug ticket for the given project.
 \`/bunny feature [project] [short description]\` - to create a feature ticket for the given project.
 The following projects are connected today:
-\`maneko\`, \`mobile2020\`, \`wallet\`, \`micraft\`, \`online2020\`, \`essencex\`
+\`mobile2020\`,  \`online2020\`, \`wallet\`, \`maneko\`
 `
 
 //*********************************************
@@ -162,10 +162,10 @@ slapp.message('.*', ['direct_message', 'direct_mention', 'mention', 'ambient'], 
                         .ref(msg.meta.team_id)
                         .child(msg.meta.channel_id)
                         .set({
-                            project_name: response.result.parameters.project_name
+                            project_name: response.result.parameters //response.result.parameters.project_name
                         })
                     msg.say({
-                        text: 'Do you want to create a bug for ' + response.result.parameters.project_name + '?',
+                        text: 'Do you want to create a ticket for ' + response.result.parameters.project_name + '?',
                         attachments: [{
                             text: '',
                             fallback: 'Yes or No?',
@@ -182,9 +182,11 @@ slapp.message('.*', ['direct_message', 'direct_mention', 'mention', 'ambient'], 
                                 value: 'no'
                             }]
                         }]
-                    }).route('handleDoitConfirmation', msg, 60)
+                    }).route('handleDoitConfirmation', {
+                        msg: msg,
+                        apiairesponse: response
+                    }, 60)
                 }
-
             }
         })
 
@@ -196,17 +198,19 @@ slapp.message('.*', ['direct_message', 'direct_mention', 'mention', 'ambient'], 
     }
 })
 
-slapp.route('handleDoitConfirmation', (msg, state) => {
+slapp.route('handleDoitConfirmation', (msg, obj) => {
     var handleDoitConfirmationAction = function(action) {
         console.log(action ? 'true' : 'false');
         if (action) {
+            var projectId = obj.apiairesponse.result.parameters.project_name;
+
             IFTTT.request({
-                event: 'bug_maneko_trello', // TODO
+                event: 'bug_' + projectId + '_trello',
                 method: 'POST',
                 params: {
-                    'value1': 'card name', // title
+                    'value1': obj.apiairesponse.result.resolvedQuery, // title
                     'value2': msg.body.user_name, // user_name
-                    'value3': 'description text' // description
+                    'value3': '' // description
                 }
             }, function(err) {
                 if (err) {
