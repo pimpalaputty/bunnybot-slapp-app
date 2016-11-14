@@ -182,7 +182,7 @@ slapp.message('.*', ['direct_message', 'direct_mention', 'mention', 'ambient'], 
                                 value: 'no'
                             }]
                         }]
-                    })
+                    }).route('handleDoitConfirmation', msg, 60)
                 }
 
             }
@@ -196,31 +196,52 @@ slapp.message('.*', ['direct_message', 'direct_mention', 'mention', 'ambient'], 
     }
 })
 
-slapp.action('yesno_callback', 'answer', (msg, value) => {
-    if (value === 'yes') {
-        // TODO: call IFTTT trigger function
-        IFTTT.request({
-            event: 'bug_maneko_trello',
-            method: 'POST',
-            params: {
-                'value1': 'card name',
-                'value2': 'email',
-                'value3': 'description text'
-            }
-        }, function(err) {
-            if (err) {
-                console.log('IFTTT error:', err);
-            } else {
-                console.log('IFTTT post OK');
-            }
-        });
+slapp.route('handleDoitConfirmation', (msg, state) => {
+    var handleDoitConfirmationAction = function(action) {
+        console.log(action ? 'true' : 'false');
+        if (action) {
+            IFTTT.request({
+                event: 'bug_maneko_trello', // TODO 
+                method: 'POST',
+                params: {
+                    'value1': 'card name', // title
+                    'value2': msg.body.user_name, // user_name
+                    'value3': 'description text' // description
+                }
+            }, function(err) {
+                if (err) {
+                    console.log('IFTTT error:', err);
+                } else {
+                    console.log('IFTTT post OK');
+                }
+            });
 
-        msg.respond(msg.body.response_url, 'Done!')
+            msg.respond(msg.body.response_url, {
+                text: 'done',
+                delete_original: true
+            })
 
-    } else if (value === 'no') {
-        msg.respond(msg.body.response_url, 'No problem! Maybe later.')
+        } else {
+            msg.respond(msg.body.response_url, {
+                text: 'No problem! Maybe later.',
+                delete_original: true
+            })
+        }
     }
+
+    if (msg.type !== 'action') {
+        msg
+            .say('Please choose a Yes or No button :wink:')
+            .route('handleDoitConfirmation', state, 60)
+        return
+    }
+
+    let answer = msg.body.actions[0].value
+    handleDoitConfirmationAction(answer === 'yes')
+    return
 })
+
+
 
 // // "Conversation" flow that tracks state - kicks off when user says hi, hello or hey
 // slapp
