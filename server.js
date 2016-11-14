@@ -67,7 +67,6 @@ The following projects are connected today:
 //*********************************************
 
 var isValidProjectId = function(pid) {
-    console.log("pid", pid);
     return ["maneko", "mobile2020", "online2020", "wallet", "micraft", "essencex"].indexOf(pid) !== -1;
 }
 
@@ -82,10 +81,10 @@ slapp.command('/bunny', '(\\w+)\\s?([\\w]+)(.*)', (msg, value, type, projectId, 
     if (!isDefined(value) || !value || (type && ['bug', 'feature'].indexOf(type))) {
         help()
     } else if (!(type && projectId && description)) {
-        help('Something is missing!')
+        help(':crystal_ball: Something is missing!')
     } else if (!isValidProjectId(projectId)) {
         msg.say({
-            text: 'Invalid project identifier!'
+            text: ':warning: Invalid project identifier!'
         })
     } else {
         // everything is okey
@@ -105,7 +104,7 @@ slapp.command('/bunny', '(\\w+)\\s?([\\w]+)(.*)', (msg, value, type, projectId, 
             }
         })
 
-        msg.respond(msg.body.response_url, 'Done!')
+        msg.respond(msg.body.response_url, ':thumbsup_all: I\'ve created a ticket in the ' + projectId + ' with the following text:\n>' + description)
     }
 })
 
@@ -138,7 +137,7 @@ slapp.message('.*', ['direct_message', 'direct_mention', 'mention', 'ambient'], 
             }]
         })
         request.on('response', (response) => {
-            console.log(response)
+            console.log('Api.ai response:', response)
 
             if (isDefined(response.result)) {
                 let responseText = response.result.fulfillment.speech
@@ -200,15 +199,15 @@ slapp.message('.*', ['direct_message', 'direct_mention', 'mention', 'ambient'], 
 
 slapp.route('handleDoitConfirmation', (msg, obj) => {
     var handleDoitConfirmationAction = function(action) {
-        console.log(action ? 'true' : 'false');
         if (action) {
-            var projectId = obj.apiairesponse.result.parameters.project_name;
+            var projectId = obj.apiairesponse.result.parameters.project_name
+            var description = obj.apiairesponse.result.resolvedQuery
 
             IFTTT.request({
                 event: 'bug_' + projectId + '_trello',
                 method: 'POST',
                 params: {
-                    'value1': obj.apiairesponse.result.resolvedQuery, // title
+                    'value1': description, // title
                     'value2': msg.body.user_name, // user_name
                     'value3': '' // description
                 }
@@ -221,7 +220,7 @@ slapp.route('handleDoitConfirmation', (msg, obj) => {
             });
 
             msg.respond(msg.body.response_url, {
-                text: 'done',
+                text: ':thumbsup_all: I\'ve created a ticket in the ' + projectId + ' with the following text:\n>' + description,
                 delete_original: true
             })
 
