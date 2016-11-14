@@ -18,7 +18,7 @@ const decoder = new Entities()
 const sessionIds = new Map()
 
 var IFTTT_package = require('node-ifttt-maker'),
-  IFTTT = new IFTTT_package('mNtTmFDz4fzssqOofUe7vUQIaQdE4UzeLuiM-ZwcWbz');
+  IFTTT = new IFTTT_package(process.env.IFTTT_MAKER_TOKEN);
 
 var admin = require("firebase-admin");
 admin.initializeApp({
