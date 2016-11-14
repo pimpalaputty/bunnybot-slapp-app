@@ -151,12 +151,10 @@ slapp.message('.*', ['direct_message', 'direct_mention', 'mention', 'ambient'], 
 slapp.action('yesno_callback', 'answer', (msg, value) => {
   if (value === 'yes') {
     // TODO: call IFTTT trigger function
-    msg
-      .respond(msg.body.response_url, 'Done!')
+    msg.respond(msg.body.response_url, 'Done!')
 
   } else if (value === 'no') {
-    msg
-      .respond(msg.body.response_url, 'No problem! Maybe later.')
+    msg.respond(msg.body.response_url, 'No problem! Maybe later.')
   }
 })
 
