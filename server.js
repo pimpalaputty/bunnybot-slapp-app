@@ -18,16 +18,16 @@ const decoder = new Entities()
 const sessionIds = new Map()
 
 var IFTTT_package = require('node-ifttt-maker'),
-  IFTTT = new IFTTT_package(process.env.IFTTT_MAKER_TOKEN);
+    IFTTT = new IFTTT_package(process.env.IFTTT_MAKER_TOKEN);
 
 var admin = require("firebase-admin");
 admin.initializeApp({
-  credential: admin.credential.cert({
-    projectId: "bunnybot-aec3c",
-    clientEmail: "firebase-adminsdk-5ct8p@bunnybot-aec3c.iam.gserviceaccount.com",
-    privateKey: process.env.FIB_PRIVATEKEY
-  }),
-  databaseURL: "https://bunnybot-aec3c.firebaseio.com"
+    credential: admin.credential.cert({
+        projectId: "bunnybot-aec3c",
+        clientEmail: "firebase-adminsdk-5ct8p@bunnybot-aec3c.iam.gserviceaccount.com",
+        privateKey: process.env.FIB_PRIVATEKEY
+    }),
+    databaseURL: "https://bunnybot-aec3c.firebaseio.com"
 });
 var db = admin.database()
 
@@ -35,148 +35,191 @@ var db = admin.database()
 var port = process.env.PORT || 3000
 
 var slapp = Slapp({
-  // Beep Boop sets the SLACK_VERIFY_TOKEN env var
-  verify_token: process.env.SLACK_VERIFY_TOKEN,
-  convo_store: ConvoStore(),
-  context: Context()
+    // Beep Boop sets the SLACK_VERIFY_TOKEN env var
+    verify_token: process.env.SLACK_VERIFY_TOKEN,
+    convo_store: ConvoStore(),
+    context: Context()
 })
 
 function isDefined(obj) {
-  if (typeof obj == 'undefined') {
-    return false
-  }
+    if (typeof obj == 'undefined') {
+        return false
+    }
 
-  if (!obj) {
-    return false
-  }
+    if (!obj) {
+        return false
+    }
 
-  return obj != null
+    return obj != null
 }
 
-// var HELP_TEXT = `
-// I will respond to the following messages:
-// \`help\` - to see this message.
-// \`hi\` - to demonstrate a conversation that tracks state.
-// \`thanks\` - to demonstrate a simple response.
-// \`<type-any-other-text>\` - to demonstrate a random emoticon response, some of the time :wink:.
-// \`attachment\` - to see a Slack attachment message.
-// `
+var HELP_TEXT = `
+I will respond to the following messages:
+\`help\` - to see this message.
+\`hi\` - to demonstrate a conversation that tracks state.
+\`thanks\` - to demonstrate a simple response.
+\`<type-any-other-text>\` - to demonstrate a random emoticon response, some of the time :wink:.
+\`attachment\` - to see a Slack attachment message.
+`
 
 //*********************************************
 // Setup different handlers for messages
 //*********************************************
 
+var isValidProjectId = function(pid) {
+    console.log("pid", pid);
+    return ["maneko", "2020"].indexOf(pid) !== -1;
+}
+
+slapp.command('/bunny', '(bug|feature)\\s?([\\w]+)(.*)', (msg, value, type, projectId, description) => {
+
+    var help = function(text) {
+        msg.say({
+            text: text ? text + '\n' + HELP_TEXT : HELP_TEXT
+        })
+    }
+
+    if (!isDefined(value) || !value) {
+        help()
+    } else if (!(type && projectId && description)) {
+        help('Something is missing!')
+    } else if (!isValidProjectId(projectId)) {
+        msg.say({
+            text: 'Invalid project identifier!'
+        })
+    } else {
+        // everything is okey
+        IFTTT.request({
+            event: 'bug_' + projectId + '_trello',
+            method: 'POST',
+            params: {
+                'value1': description,
+                'value2': msg.body.user_name || '',
+                'value3': ''
+            }
+        }, function(err) {
+            if (err) {
+                console.log('IFTTT error:', err);
+            } else {
+                console.log('IFTTT post OK');
+            }
+        })
+
+        msg.respond(msg.body.response_url, 'Done!')
+    }
+})
+
 slapp.message('.*', ['direct_message', 'direct_mention', 'mention', 'ambient'], (msg, text) => {
-  try {
-    let requestText = decoder.decode(text)
-    requestText = requestText.replace("’", "'")
+    try {
+        let requestText = decoder.decode(text)
+        requestText = requestText.replace("’", "'")
 
-    let channel = msg.body.event.channel
-    let botId = msg.meta.bot_user_id
-    let userId = msg.body.event.user
+        let channel = msg.body.event.channel
+        let botId = msg.meta.bot_user_id
+        let userId = msg.body.event.user
 
-    if (requestText.indexOf(botId) > -1) {
-      requestText = requestText.replace(botId, '')
-    }
-
-    if (!sessionIds.has(channel)) {
-      sessionIds.set(channel, uuid.v1())
-    }
-
-    console.log('Start request:', requestText)
-    let request = apiAiService.textRequest(requestText, {
-      sessionId: sessionIds.get(channel),
-      contexts: [{
-        name: "generic",
-        parameters: {
-          slack_user_id: userId,
-          slack_channel: channel
+        if (requestText.indexOf(botId) > -1) {
+            requestText = requestText.replace(botId, '')
         }
-      }]
-    })
-    request.on('response', (response) => {
-      console.log(response)
 
-      if (isDefined(response.result)) {
-        let responseText = response.result.fulfillment.speech
-        let responseData = response.result.fulfillment.data
-        let action = response.result.action
+        if (!sessionIds.has(channel)) {
+            sessionIds.set(channel, uuid.v1())
+        }
 
-        if (isDefined(responseData) && isDefined(responseData.slack)) {
-          try {
-            msg.say(responseData.slack)
-          } catch (err) {
-            msg.say(err.message)
-          }
-        } else if (isDefined(responseText)) {
-          try {
-            msg.say(responseText)
-          } catch (err) {
-            msg.say(err.message)
-          }
-        } else if (isDefined(action) && isDefined(response.result.parameters.project_name)) {
-          db
-            .ref(msg.meta.team_id)
-            .child(msg.meta.channel_id)
-            .set({
-              project_name: response.result.parameters.project_name
-            })
-          msg.say({
-            text: 'Do you want to create a bug for ' + response.result.parameters.project_name + '?',
-            attachments: [{
-              text: '',
-              fallback: 'Yes or No?',
-              callback_id: 'yesno_callback',
-              actions: [{
-                name: 'answer',
-                text: 'Yes',
-                type: 'button',
-                value: 'yes'
-              }, {
-                name: 'answer',
-                text: 'No',
-                type: 'button',
-                value: 'no'
-              }]
+        console.log('Start request:', requestText)
+        let request = apiAiService.textRequest(requestText, {
+            sessionId: sessionIds.get(channel),
+            contexts: [{
+                name: "generic",
+                parameters: {
+                    slack_user_id: userId,
+                    slack_channel: channel
+                }
             }]
-          })
-        }
+        })
+        request.on('response', (response) => {
+            console.log(response)
 
-      }
-    })
+            if (isDefined(response.result)) {
+                let responseText = response.result.fulfillment.speech
+                let responseData = response.result.fulfillment.data
+                let action = response.result.action
 
-    request.on('error', (error) => console.error(error))
-    request.end()
+                if (isDefined(responseData) && isDefined(responseData.slack)) {
+                    try {
+                        msg.say(responseData.slack)
+                    } catch (err) {
+                        msg.say(err.message)
+                    }
+                } else if (isDefined(responseText)) {
+                    try {
+                        msg.say(responseText)
+                    } catch (err) {
+                        msg.say(err.message)
+                    }
+                } else if (isDefined(action) && isDefined(response.result.parameters.project_name)) {
+                    db
+                        .ref(msg.meta.team_id)
+                        .child(msg.meta.channel_id)
+                        .set({
+                            project_name: response.result.parameters.project_name
+                        })
+                    msg.say({
+                        text: 'Do you want to create a bug for ' + response.result.parameters.project_name + '?',
+                        attachments: [{
+                            text: '',
+                            fallback: 'Yes or No?',
+                            callback_id: 'yesno_callback',
+                            actions: [{
+                                name: 'answer',
+                                text: 'Yes',
+                                type: 'button',
+                                value: 'yes'
+                            }, {
+                                name: 'answer',
+                                text: 'No',
+                                type: 'button',
+                                value: 'no'
+                            }]
+                        }]
+                    })
+                }
 
-  } catch (err) {
-    console.error(err)
-  }
+            }
+        })
+
+        request.on('error', (error) => console.error(error))
+        request.end()
+
+    } catch (err) {
+        console.error(err)
+    }
 })
 
 slapp.action('yesno_callback', 'answer', (msg, value) => {
-  if (value === 'yes') {
-    // TODO: call IFTTT trigger function
-    IFTTT.request({
-      event: 'bug_maneko_trello',
-      method: 'POST',
-      params: {
-        'value1': 'card name',
-        'value2': 'email',
-        'value3': 'description text'
-      }
-    }, function (err) {
-      if (err) {
-        console.log('IFTTT error:', err);
-      } else {
-        console.log('IFTTT post OK');
-      }
-    });
+    if (value === 'yes') {
+        // TODO: call IFTTT trigger function
+        IFTTT.request({
+            event: 'bug_maneko_trello',
+            method: 'POST',
+            params: {
+                'value1': 'card name',
+                'value2': 'email',
+                'value3': 'description text'
+            }
+        }, function(err) {
+            if (err) {
+                console.log('IFTTT error:', err);
+            } else {
+                console.log('IFTTT post OK');
+            }
+        });
 
-    msg.respond(msg.body.response_url, 'Done!')
+        msg.respond(msg.body.response_url, 'Done!')
 
-  } else if (value === 'no') {
-    msg.respond(msg.body.response_url, 'No problem! Maybe later.')
-  }
+    } else if (value === 'no') {
+        msg.respond(msg.body.response_url, 'No problem! Maybe later.')
+    }
 })
 
 // // "Conversation" flow that tracks state - kicks off when user says hi, hello or hey
@@ -263,9 +306,9 @@ var server = slapp.attachToExpress(express())
 
 // start http server
 server.listen(port, (err) => {
-  if (err) {
-    return console.error(err)
-  }
+    if (err) {
+        return console.error(err)
+    }
 
-  console.log(`Listening on port ${port}`)
+    console.log(`Listening on port ${port}`)
 })
