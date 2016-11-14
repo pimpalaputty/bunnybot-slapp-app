@@ -53,13 +53,13 @@ function isDefined(obj) {
     return obj != null
 }
 
-var HELP_TEXT = `
+var HELP_TEXT_COMMAND = `
 I will respond to the following messages:
-\`help\` - to see this message.
-\`hi\` - to demonstrate a conversation that tracks state.
-\`thanks\` - to demonstrate a simple response.
-\`<type-any-other-text>\` - to demonstrate a random emoticon response, some of the time :wink:.
-\`attachment\` - to see a Slack attachment message.
+\`/bunny help\` - to see this message.
+\`/bunny bug [project] [short description]\` - to create a bug ticket for the given project.
+\`/bunny feature [project] [short description]\` - to create a feature ticket for the given project.
+The following projects are connected today:
+\`maneko\`, \`mobile2020\`, \`wallet\`, \`micraft\`, \`online2020\`, \`essencex\`
 `
 
 //*********************************************
@@ -75,7 +75,7 @@ slapp.command('/bunny', '(bug|feature)\\s?([\\w]+)(.*)', (msg, value, type, proj
 
     var help = function(text) {
         msg.say({
-            text: text ? text + '\n' + HELP_TEXT : HELP_TEXT
+            text: text ? text + '\n' + HELP_TEXT_COMMAND : HELP_TEXT_COMMAND
         })
     }
 
