@@ -21,6 +21,7 @@
     "express": "^4.14.0",
     "firebase-admin": "^4.0.1",
     "html-entities": "^1.2.0",
+    "node-ifttt-maker": "^0.1.2",
     "node-uuid": "^1.4.7",
     "nodemon": "^1.11.0",
     "slapp": "^1.2.0",

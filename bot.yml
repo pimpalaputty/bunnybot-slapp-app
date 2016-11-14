@@ -8,4 +8,7 @@ config:
   - name: FIB_PRIVATEKEY
     friendly_name: Firebase Admin private key
     type: secret
+  - name: IFTTT_MAKER_TOKEN
+    friendly_name: IFTTT Maker token
+    type: secret
 # To learn everything supported in the bot.yml file, visit https://beepboophq.com/docs/article/bot-yml

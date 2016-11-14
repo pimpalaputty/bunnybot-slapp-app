@@ -17,6 +17,9 @@ const decoder = new Entities()
 
 const sessionIds = new Map()
 
+var IFTTT_package = require('node-ifttt-maker'),
+  IFTTT = new IFTTT_package('mNtTmFDz4fzssqOofUe7vUQIaQdE4UzeLuiM-ZwcWbz');
+
 var admin = require("firebase-admin");
 admin.initializeApp({
   credential: admin.credential.cert({
@@ -115,7 +118,9 @@ slapp.message('.*', ['direct_message', 'direct_mention', 'mention', 'ambient'], 
           db
             .ref(msg.meta.team_id)
             .child(msg.meta.channel_id)
-            .set({project_name: response.result.parameters.project_name})
+            .set({
+              project_name: response.result.parameters.project_name
+            })
           msg.say({
             text: 'Do you want to create a bug for ' + response.result.parameters.project_name + '?',
             attachments: [{
@@ -151,10 +156,22 @@ slapp.message('.*', ['direct_message', 'direct_mention', 'mention', 'ambient'], 
 slapp.action('yesno_callback', 'answer', (msg, value) => {
   if (value === 'yes') {
     // TODO: call IFTTT trigger function
-      msg.respond('https://maker.ifttt.com/trigger/bug/with/key/12345') {
-          
+    IFTTT.request({
+      event: 'bug_maneko_trello',
+      method: 'POST',
+      params: {
+        'value1': 'card name',
+        'value2': 'email',
+        'value3': 'description text'
       }
-      
+    }, function (err) {
+      if (err) {
+        console.log('IFTTT error:', err);
+      } else {
+        console.log('IFTTT post OK');
+      }
+    });
+
     msg.respond(msg.body.response_url, 'Done!')
 
   } else if (value === 'no') {
