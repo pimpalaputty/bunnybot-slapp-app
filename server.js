@@ -77,8 +77,7 @@ slapp.command('/bunny', '(\\w+)\\s?([\\w]+)(.*)', (msg, value, type, projectId, 
             text: text ? text + '\n' + HELP_TEXT_COMMAND : HELP_TEXT_COMMAND
         })
     }
-
-    if (!isDefined(value) || !value || (type && ['bug', 'feature'].indexOf(type))) {
+    if (!isDefined(value) || !value || (type && ['bug', 'feature'].indexOf(type) === -1)) {
         help()
     } else if (!(type && projectId && description)) {
         help(':crystal_ball: Something is missing!')
@@ -89,7 +88,7 @@ slapp.command('/bunny', '(\\w+)\\s?([\\w]+)(.*)', (msg, value, type, projectId, 
     } else {
         // everything is okey
         IFTTT.request({
-            event: 'bug_' + projectId + '_trello',
+            event: type + '_' + projectId + '_trello',
             method: 'POST',
             params: {
                 'value1': description,
@@ -163,8 +162,9 @@ slapp.message('.*', ['direct_message', 'direct_mention', 'mention', 'ambient'], 
                         .set({
                             project_name: response.result.parameters //response.result.parameters.project_name
                         })
+                    var intentType = response.result.metadata.intentName === 'code_feature_found' ? 'feature' : 'bug'
                     msg.say({
-                        text: 'Do you want to create a ticket for ' + response.result.parameters.project_name + '?',
+                        text: 'Do you want to create a ' + intentType + ' ticket for ' + response.result.parameters.project_name + '?',
                         attachments: [{
                             text: '',
                             fallback: 'Yes or No?',
@@ -202,9 +202,10 @@ slapp.route('handleDoitConfirmation', (msg, obj) => {
         if (action) {
             var projectId = obj.apiairesponse.result.parameters.project_name
             var description = obj.apiairesponse.result.resolvedQuery
+            var intentType = obj.apiairesponse.result.metadata.intentName === 'code_feature_found' ? 'feature' : 'bug'
 
             IFTTT.request({
-                event: 'bug_' + projectId + '_trello',
+                event: intentType + '_' + projectId + '_trello',
                 method: 'POST',
                 params: {
                     'value1': description, // title
